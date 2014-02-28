@@ -1,3 +1,8 @@
+" File: v2ex.vim
+" Desption: v2ex for vim
+" Author: solos
+" Last Change: 2014/02/28
+
 if !has('python')
     echo "Error: Required vim compiled with +python"
     finish
@@ -9,25 +14,37 @@ import vim
 import json
 import time
 import datetime
-import requests
+
+has_requests = True
+try:
+    import requests
+except:
+    import urllib2
+    has_requests = False
 
 TIMEOUT = 15
 URL = 'http://www.v2ex.com/api/topics/latest.json'
 HEADERS = {'User-Agent': 'vim'}
 
 try:
-    posts = requests.get(URL, stream=False, verify=False, timeout=TIMEOUT,
-                         headers=HEADERS).json()
+    if has_requests:
+        posts = requests.get(URL, stream=False, verify=False, timeout=TIMEOUT,
+                             headers=HEADERS).json()
+    else:
+        req = urllib2.Request(URL, headers=HEADERS)
+        response = urllib2.urlopen(req).read()
+        posts = json.loads(response)
+
     del vim.current.buffer[:]
 
     for post in posts:
         node = post['node']['title'].encode('utf8')
-        title = post['title'].encode('utf8')
-        url = post['url'].encode('utf8')
+        title = post['title'].encode('utf8').replace('\n', '')
+        url = post['url'].encode('utf8').replace('\n', '')
         replies = post['replies']
-        created_timstamp = post['created']
+        created_timestamp = post['created']
         created = time.strftime("%Y-%m-%d %H:%M:%S",
-                                time.localtime(created_timstamp))
+                                time.localtime(created_timestamp))
         last_modified = post['last_modified']
         last_touched_timestamp = post['last_touched']
         last_touched = time.strftime("%Y-%m-%d %H:%M:%S",
